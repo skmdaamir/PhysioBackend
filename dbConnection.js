@@ -1,9 +1,4 @@
-require("dotenv").config();
 const mysql = require("mysql2/promise");
-// console.log(process.env.DB_HOST);
-// console.log(process.env.DB_USER);
-// console.log(process.env.DB_PASSWORD);
-// console.log(process.env.DB_NAME);
 
 // Creating a single connection that can be used across your app
 const db = mysql.createPool({
