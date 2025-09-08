@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const db = require("../dbConnection"); // your MySQL connection
+const db = require("../../dbConnection"); // your MySQL connection
 
 // GET all careers
 router.get("/careers", async (req, res) => {

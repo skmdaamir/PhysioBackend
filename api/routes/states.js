@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const db = require("../dbConnection"); // Update path if necessary
+const db = require("../../dbConnection"); // Update path if necessary
 
 // GET /api/states
 router.get("/", async (req, res) => {

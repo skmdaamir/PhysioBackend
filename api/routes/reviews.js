@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const db = require("../dbConnection"); // Your MySQL connection setup
+const db = require("../../dbConnection"); // Your MySQL connection setup
 
 router.post("/submit-review", (req, res) => {
   const { name, email, mobile, rating, description } = req.body;

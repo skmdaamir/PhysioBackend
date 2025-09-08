@@ -1,7 +1,7 @@
 // routes/appointments.js
 const express = require("express");
 const router = express.Router();
-const db = require("../dbConnection");
+const db = require("../../dbConnection");
 
 // GET cities by state_id
 router.get("/:stateId", async (req, res) => {
