@@ -49,3 +49,5 @@ router.post("/blogs", upload.single("image"), async (req, res) => {
       .json({ error: "Internal Server Error", details: error.message });
   }
 });
+
+module.exports = router;
