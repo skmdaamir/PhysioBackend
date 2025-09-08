@@ -3,7 +3,7 @@ const express = require("express");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-const db = require("./dbConnection"); // Import the shared connection pool
+const db = require("../../dbConnection"); // Import the shared connection pool
 
 // console.log(process.env.JWT_SECRET);
 const SECRET_KEY = process.env.JWT_SECRET;

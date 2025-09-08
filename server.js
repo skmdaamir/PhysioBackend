@@ -7,7 +7,7 @@ const blogRoutes = require("./api/routes/blogRouters");
 
 const app = express();
 const PORT = 5000;
-const adminRoutes = require("./admin");
+const adminRoutes = require("./api/routes/admin");
 const bodyParser = require("body-parser");
 const statesRoute = require("./api/routes/states");
 const citiesRoute = require("./api/routes/cities");
@@ -83,6 +83,11 @@ app.get("/test", (req, res) => {
 app.get("/", (req, res) => {
   res.send("Physio API is running ✅");
 });
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+if (process.env.VERCEL) {
+  module.exports = app;
+} else {
+  // ✅ Run locally
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}

@@ -1,4 +1,4 @@
-const db = require("./dbConnection");
+const db = require("../../dbConnection");
 
 // JSON Data (you can import this from a file if preferred)
 const districtsData = {
