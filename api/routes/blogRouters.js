@@ -67,4 +67,27 @@ router.get("/allBlogs", async (req, res) => {
   }
 });
 
+// PUT update blog status
+router.put("/blogs/:id/status", async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body; // expected: "published" or "draft"
+
+  try {
+    // Update blog status
+    const [result] = await db.execute(
+      "UPDATE blog SET status = ? WHERE id = ?",
+      [status, id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Blog not found" });
+    }
+
+    res.json({ message: "Blog status updated successfully" });
+  } catch (err) {
+    console.error("Error updating blog status:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
 module.exports = router;
