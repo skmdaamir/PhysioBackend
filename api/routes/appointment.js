@@ -6,6 +6,7 @@ const db = require("../../dbConnection");
 router.post("/", async (req, res) => {
   const { name, phone, email, state, city, treatmentType, conditions } =
     req.body;
+  console.log(req.body);
 
   const sql = `
     INSERT INTO appointments (name, phone, email, state, city, treatmentType,conditions,created_at)
