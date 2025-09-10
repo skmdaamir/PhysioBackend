@@ -55,4 +55,16 @@ router.post("/blogs", upload.single("image"), async (req, res) => {
   }
 });
 
+// GET all blogs
+router.get("/allBlogs", async (req, res) => {
+  try {
+    const sql = "SELECT * FROM blog ORDER BY created_at DESC";
+    const [rows] = await db.execute(sql);
+    res.json(rows);
+  } catch (err) {
+    console.error("Error fetching Treatment:", error);
+    res.status(500).json({ message: "Failed to fetch Treatment" });
+  }
+});
+
 module.exports = router;
