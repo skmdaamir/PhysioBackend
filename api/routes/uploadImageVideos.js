@@ -1,3 +1,4 @@
+// require("dotenv").config();
 const express = require("express");
 const router = express.Router();
 const db = require("../../dbConnection");
@@ -27,7 +28,8 @@ const upload = multer({ storage });
 
 /* ---------- UPLOAD ---------- */
 router.post("/upload-photo", upload.single("image"), async (req, res) => {
-  const { title, youtubeLink } = req.body;
+  const title = req.body.title;
+  const youtubeLink = req.body.youtubeLink || null;
   const image_url = req.file ? req.file.path : null;
 
   if (!title || !image_url) {

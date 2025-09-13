@@ -1,3 +1,4 @@
+// require("dotenv").config();
 const express = require("express");
 const router = express.Router();
 const db = require("../../dbConnection");
@@ -56,10 +57,26 @@ router.post("/blogs", upload.single("image"), async (req, res) => {
 });
 
 // GET all blogs
-router.get("/allBlogs", async (req, res) => {
+router.get("/blogs/allBlogs", async (req, res) => {
   try {
+    // console.log("request coming");
     const sql = "SELECT * FROM blog ORDER BY created_at DESC";
     const [rows] = await db.execute(sql);
+    // console.log(rows);
+    res.json(rows);
+  } catch (err) {
+    console.error("Error fetching Treatment:", error);
+    res.status(500).json({ message: "Failed to fetch Treatment" });
+  }
+});
+
+// GET all blogs
+router.get("/blogs/active", async (req, res) => {
+  try {
+    // console.log("request coming");
+    const sql = "SELECT * FROM blog where is_active = '1' ORDER BY created_at DESC";
+    const [rows] = await db.execute(sql);
+    // console.log(rows);
     res.json(rows);
   } catch (err) {
     console.error("Error fetching Treatment:", error);

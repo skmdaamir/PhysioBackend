@@ -1,3 +1,4 @@
+require("dotenv").config();
 const mysql = require("mysql2/promise");
 
 // Creating a single connection that can be used across your app
@@ -9,7 +10,7 @@ const db = mysql.createPool({
   port: process.env.DB_PORT,
   waitForConnections: true,
   connectionLimit: 10,
-  connectTimeout: 10000  // <-- 10 seconds timeout
+  connectTimeout: 10000, // <-- 10 seconds timeout
 });
 
 // Export the connection pool (can handle multiple requests more efficiently)

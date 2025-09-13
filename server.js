@@ -15,7 +15,8 @@ const appointmentRoute = require("./api/routes/appointment");
 const galleryRoute = require("./api/routes/uploadImageVideos");
 const reviewRoutes = require("./api/routes/reviews");
 const careerRoutes = require("./api/routes/careerRoutes");
-const conditionRoutes = require("./api/routes/conditionsRoutes");
+const conditionRoutes = require("./api/routes/conditions");
+const symptomsRoutes = require("./api/routes/symptoms");
 const blogRoutes = require("./api/routes/blogRouters");
 
 
@@ -75,6 +76,7 @@ app.use("/api", careerRoutes);
 app.use("/api/admin", adminRoutes);
 
 app.use("/api", conditionRoutes);
+app.use("/api", symptomsRoutes);
 
 
 app.get("/test", (req, res) => {
