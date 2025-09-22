@@ -8,11 +8,15 @@ router.post("/", async (req, res) => {
     req.body;
   console.log(req.body);
 
+  const treatmentValue = Array.isArray(treatmentType)
+    ? treatmentType.join(",")
+    : treatmentType;
+
   const sql = `
     INSERT INTO appointments (name, phone, email, state, city, treatmentType,conditions,created_at)
     VALUES (?, ?, ?, ?, ?, ?, ?,NOW())
   `;
-  const values = [name, phone, email, state, city, treatmentType, conditions];
+  const values = [name, phone, email, state, city, treatmentValue, conditions];
 
   db.execute(sql, values)
     .then(() =>
