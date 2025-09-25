@@ -8,8 +8,6 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const adminRoutes = require("./api/routes/admin");
 const bodyParser = require("body-parser");
-const statesRoute = require("./api/routes/states");
-const citiesRoute = require("./api/routes/cities");
 const treatmentRoute = require("./api/routes/treatment");
 const appointmentRoute = require("./api/routes/appointment");
 const galleryRoute = require("./api/routes/uploadImageVideos");
@@ -66,8 +64,6 @@ app.use((req, res, next) => {
 // }
 app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
 app.use("/api", blogRoutes);
-app.use("/api/states", statesRoute);
-app.use("/api/cities", citiesRoute);
 app.use("/api/treatment", treatmentRoute);
 app.use("/api/appointments", appointmentRoute);
 app.use("/api", galleryRoute);
