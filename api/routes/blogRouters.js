@@ -87,13 +87,13 @@ router.get("/blogs/active", async (req, res) => {
 // PUT update blog status
 router.put("/blogs/:id/status", async (req, res) => {
   const { id } = req.params;
-  const { status } = req.body; // expected: "published" or "draft"
+  const { is_active } = req.body; // expected: "published" or "draft"
 
   try {
     // Update blog status
     const [result] = await db.execute(
-      "UPDATE blog SET status = ? WHERE id = ?",
-      [status, id]
+      "UPDATE blog SET is_active = ? WHERE id = ?",
+      [is_active, id]
     );
 
     if (result.affectedRows === 0) {
