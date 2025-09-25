@@ -3,10 +3,10 @@ const router = express.Router();
 const db = require("../../dbConnection"); // Your MySQL connection setup
 
 router.post("/submit-review", (req, res) => {
-  const { name, email, mobile, rating, description } = req.body;
+  const { name, email, mobile, rating, description,place } = req.body;
   console.log(req.body);
-  const query = `INSERT INTO reviews (name, email, mobile, rating, description) VALUES (?, ?, ?, ?, ?)`;
-  db.execute(query, [name, email, mobile, rating, description])
+  const query = `INSERT INTO reviews (name, email, mobile, rating, description,place) VALUES (?, ?, ?, ?, ?,?)`;
+  db.execute(query, [name, email, mobile, rating, description,place])
     .then(() =>
       res.status(201).json({ message: "Review submitted successfully!" })
     )
@@ -50,7 +50,7 @@ router.put("/reviewVisibility/:id", (req, res) => {
 
 router.get("/approved-reviews", async (req, res) => {
   const query =
-    "SELECT description,rating,created_at,name FROM reviews WHERE visible = 1 ORDER BY created_at DESC ";
+    "SELECT description,rating,created_at,name,place FROM reviews WHERE visible = 1 ORDER BY created_at DESC ";
   try {
     const [rows] = await db.execute(query);
     res.json(rows);
