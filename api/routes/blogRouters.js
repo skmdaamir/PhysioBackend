@@ -89,6 +89,7 @@ router.put("/blogs/:id/status", async (req, res) => {
   const { id } = req.params;
   const { is_active } = req.body; // expected: "published" or "draft"
 
+  console.log("Update payload:", { id, is_active });
   try {
     // Update blog status
     const [result] = await db.execute(
