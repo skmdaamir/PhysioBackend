@@ -74,7 +74,8 @@ router.get("/blogs/allBlogs", async (req, res) => {
 router.get("/blogs/active", async (req, res) => {
   try {
     // console.log("request coming");
-    const sql = "SELECT * FROM blog where is_active = '1' ORDER BY created_at DESC";
+    const sql =
+      "SELECT * FROM blog where is_active = '1' ORDER BY created_at DESC";
     const [rows] = await db.execute(sql);
     // console.log(rows);
     res.json(rows);
@@ -104,6 +105,36 @@ router.put("/blogs/:id/status", async (req, res) => {
     res.json({ message: "Blog status updated successfully" });
   } catch (err) {
     console.error("Error updating blog status:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// DELETE blog by ID
+router.delete("/blogs/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // First, fetch the blog to confirm it exists
+    const [rows] = await db.execute("SELECT * FROM blog WHERE id = ?", [id]);
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Blog not found" });
+    }
+
+    // Optionally delete image from Cloudinary
+    // (Only if you store the public_id — for now we skip this since we only have image_url)
+    const publicId = rows[0].image_url.split("/").pop().split(".")[0];
+    await cloudinary.uploader.destroy(`blogs/${publicId}`);
+
+    // Delete blog record
+    const [result] = await db.execute("DELETE FROM blog WHERE id = ?", [id]);
+
+    if (result.affectedRows === 0) {
+      return res.status(400).json({ message: "Failed to delete blog" });
+    }
+
+    res.json({ message: "Blog deleted successfully" });
+  } catch (err) {
+    console.error("Error deleting blog:", err);
     res.status(500).json({ message: "Internal server error" });
   }
 });
