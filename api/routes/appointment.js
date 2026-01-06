@@ -4,7 +4,7 @@ const db = require("../../dbConnection");
 
 // POST /api/appointments
 router.post("/", async (req, res) => {
-  const { name, phone, email, place, treatmentType, conditions } =
+  const { name, phone, place, treatmentType, conditions } =
     req.body;
   console.log(req.body);
 
@@ -13,10 +13,10 @@ router.post("/", async (req, res) => {
     : treatmentType;
 
   const sql = `
-    INSERT INTO appointments (name, phone, email, place, treatmentType,conditions,created_at)
+    INSERT INTO appointments (name, phone, place, treatmentType,conditions,created_at)
     VALUES (?, ?, ?, ?, ?, ?,NOW())
   `;
-  const values = [name, phone, email, place, treatmentValue, conditions];
+  const values = [name, phone, place, treatmentValue, conditions];
 
   db.execute(sql, values)
     .then(() =>
@@ -33,7 +33,7 @@ router.post("/", async (req, res) => {
 // GET /api/appointments
 router.get("/", async (req, res) => {
   const sql = `SELECT 
-  a.id, a.name, a.phone, a.email, a.conditions, a.created_at,
+  a.id, a.name, a.phone, a.conditions, a.created_at,
   a.place,
   t.treatment_description AS treatmentType,
   a.remarks
