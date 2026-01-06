@@ -14,7 +14,7 @@ router.post("/", async (req, res) => {
 
   const sql = `
     INSERT INTO appointments (name, phone, place, treatmentType,conditions,created_at)
-    VALUES (?, ?, ?, ?, ?, ?,NOW())
+    VALUES (?, ?, ?, ?, ?,NOW())
   `;
   const values = [name, phone, place, treatmentValue, conditions];
 
