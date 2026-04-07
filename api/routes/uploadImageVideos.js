@@ -3,9 +3,13 @@ const express = require("express");
 const router = express.Router();
 const db = require("../../dbConnection");
 const multer = require("multer");
-const { v2: cloudinary } = require("cloudinary");
+const { v2: cloudinary } = require("cloudinary"); // This is correct for cloudinary v2
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const path = require("path");
+
+// Debug logging to check the import
+console.log("Type of CloudinaryStorage:", typeof CloudinaryStorage);
+console.log("Value of CloudinaryStorage:", CloudinaryStorage);
 
 // ✅ Configure Cloudinary
 cloudinary.config({
@@ -39,7 +43,7 @@ router.post("/upload-photo", upload.single("image"), async (req, res) => {
   try {
     await db.execute(
       "INSERT INTO photo_gallery (treatment_name, youtube_link, image_path) VALUES (?, ?, ?)",
-      [title, youtubeLink, image_url]
+      [title, youtubeLink, image_url],
     );
     res.status(201).json({
       message: "Photo uploaded successfully.",
@@ -73,7 +77,7 @@ router.put("/gallery/:id", upload.single("image"), async (req, res) => {
     // 1. Get existing item
     const [rows] = await db.execute(
       "SELECT * FROM photo_gallery WHERE id = ?",
-      [id]
+      [id],
     );
     if (rows.length === 0) {
       return res.status(404).json({ message: "Item not found" });
@@ -103,7 +107,7 @@ router.put("/gallery/:id", upload.single("image"), async (req, res) => {
         youtubeLink || rows[0].youtube_link,
         newImageUrl,
         id,
-      ]
+      ],
     );
 
     res.json({ message: "Gallery item updated successfully" });
@@ -121,7 +125,7 @@ router.delete("/gallery/:id", async (req, res) => {
   try {
     const [rows] = await db.execute(
       "SELECT image_path FROM photo_gallery WHERE id = ?",
-      [id]
+      [id],
     );
     if (rows.length === 0) {
       return res.status(404).json({ message: "Item not found" });

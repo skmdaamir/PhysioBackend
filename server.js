@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
@@ -5,9 +6,8 @@ const session = require("express-session");
 
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 const adminRoutes = require("./api/routes/admin");
-const bodyParser = require("body-parser");
 const treatmentRoute = require("./api/routes/treatment");
 const appointmentRoute = require("./api/routes/appointment");
 const galleryRoute = require("./api/routes/uploadImageVideos");
@@ -29,7 +29,7 @@ app.use(
     saveUninitialized: false,
     rolling: true, // Reset the cookie Max-Age on every response
     cookie: {
-      maxAge: 5 * 60 * 1000, // 5 minutes in milliseconds
+      // maxAge removed: cookie becomes a session cookie (clears on browser close)
     },
   })
 );
@@ -42,8 +42,8 @@ app.use((req, res, next) => {
     } else {
       const now = Date.now();
       const diff = now - req.session.lastActivity;
-      if (diff > 5 * 60 * 1000) {
-        // 5 minutes
+      if (diff > 10 * 60 * 1000) {
+        // 10 minutes
         req.session.destroy((err) => {
           if (err) {
             console.error("Session destruction error:", err);
@@ -62,7 +62,8 @@ app.use((req, res, next) => {
   // methods: ["GET", "POST", "PUT", "DELETE"],
   // credentials: true,
 // }
-app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
+// Serving static files from the project's 'uploads' directory
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api", blogRoutes);
 app.use("/api/treatment", treatmentRoute);
 app.use("/api/appointments", appointmentRoute);
@@ -85,7 +86,15 @@ if (process.env.VERCEL) {
   module.exports = app;
 } else {
   // ✅ Run locally
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+  const server = app.listen(PORT, () => {
+    console.log(`🚀 Server started in development mode on http://localhost:${PORT}`);
+  });
+
+  server.on("error", (err) => {
+    if (err.code === "EADDRINUSE" || err.code === "UNKNOWN") {
+      console.error(`❌ Port ${PORT} is unavailable (Error: ${err.code}). This often happens if the port is reserved by the OS or another process. Please try a different port.`);
+    } else {
+      console.error("❌ Server error:", err);
+    }
   });
 }

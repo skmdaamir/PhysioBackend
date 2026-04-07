@@ -13,5 +13,17 @@ const db = mysql.createPool({
   connectTimeout: 10000, // <-- 10 seconds timeout
 });
 
+// Test the connection on startup
+(async () => {
+  try {
+    const connection = await db.getConnection();
+    console.log("✅ Database connection pool established successfully.");
+    connection.release();
+  } catch (err) {
+    console.error("❌ Database connection failed. Check your .env file and MySQL status.");
+    console.error(err.message);
+  }
+})();
+
 // Export the connection pool (can handle multiple requests more efficiently)
 module.exports = db;
