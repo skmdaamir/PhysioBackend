@@ -29,7 +29,7 @@ app.use(
     saveUninitialized: false,
     rolling: true, // Reset the cookie Max-Age on every response
     cookie: {
-      maxAge: 5 * 60 * 1000, // 5 minutes in milliseconds
+      maxAge: 10 * 60 * 1000, // 10 minutes in milliseconds
     },
   })
 );
@@ -42,7 +42,7 @@ app.use((req, res, next) => {
     } else {
       const now = Date.now();
       const diff = now - req.session.lastActivity;
-      if (diff > 5 * 60 * 1000) {
+      if (diff > 10 * 60 * 1000) {
         // 5 minutes
         req.session.destroy((err) => {
           if (err) {

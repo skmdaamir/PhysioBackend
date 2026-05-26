@@ -4,7 +4,8 @@ const router = express.Router();
 const db = require("../../dbConnection");
 const multer = require("multer");
 const { v2: cloudinary } = require("cloudinary");
-const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const multerStorage = require("multer-storage-cloudinary");
+const CloudinaryStorage = multerStorage.CloudinaryStorage || multerStorage;
 const path = require("path");
 
 // ✅ Configure Cloudinary

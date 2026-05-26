@@ -12,7 +12,20 @@ const upload = multer({ storage });
 
 router.post("/blogs", upload.single("image"), async (req, res) => {
   try {
-    const { title, content } = req.body;
+    const {
+      title,
+      slug,
+      meta_title,
+      meta_description,
+      meta_keywords,
+      city,
+      state,
+      short_description,
+      content,
+      author_name,
+      category,
+      status,
+    } = req.body;
 
     if (!req.file) {
       return res.status(400).json({ error: "Image is required" });
@@ -34,19 +47,38 @@ router.post("/blogs", upload.single("image"), async (req, res) => {
 
     // Upload image
     const result = await uploadFromBuffer(req.file.buffer);
-    const image_url = result.secure_url;
+    const banner_image = result.secure_url;
 
     // Insert into database
     const sql = `
-      INSERT INTO blog (title, content, image_url, is_active, created_at, updated_at) 
-      VALUES (?, ?, ?, 1, NOW(), NOW())
+      INSERT INTO blog (
+        title, slug, meta_title, meta_description, meta_keywords, 
+        city, state, short_description, content, banner_image, 
+        author_name, category, status
+      ) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
-    const [dbResult] = await db.execute(sql, [title, content, image_url]);
+
+    const [dbResult] = await db.execute(sql, [
+      title,
+      slug,
+      meta_title || null,
+      meta_description || null,
+      meta_keywords || null,
+      city || null,
+      state || null,
+      short_description || null,
+      content,
+      banner_image,
+      author_name || 'Admin',
+      category || null,
+      status || 'Draft'
+    ]);
 
     res.status(201).json({
       message: "Blog added",
       blogId: dbResult.insertId,
-      imagePath: image_url,
+      imagePath: banner_image,
     });
   } catch (error) {
     console.error("Server Error:", error);
@@ -65,8 +97,8 @@ router.get("/blogs/allBlogs", async (req, res) => {
     // console.log(rows);
     res.json(rows);
   } catch (err) {
-    console.error("Error fetching Treatment:", error);
-    res.status(500).json({ message: "Failed to fetch Treatment" });
+    console.error("Error fetching blogs:", err);
+    res.status(500).json({ message: "Failed to fetch blogs" });
   }
 });
 
@@ -75,27 +107,46 @@ router.get("/blogs/active", async (req, res) => {
   try {
     // console.log("request coming");
     const sql =
-      "SELECT * FROM blog where is_active = '1' ORDER BY created_at DESC";
+      "SELECT * FROM blog WHERE status = 'Published' ORDER BY created_at DESC";
     const [rows] = await db.execute(sql);
     // console.log(rows);
     res.json(rows);
   } catch (err) {
-    console.error("Error fetching Treatment:", error);
-    res.status(500).json({ message: "Failed to fetch Treatment" });
+    console.error("Error fetching active blogs:", err);
+    res.status(500).json({ message: "Failed to fetch active blogs" });
+  }
+});
+
+// GET single blog by ID
+router.get("/blogs/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    // Increment the views count for this blog
+    await db.execute("UPDATE blog SET views = views + 1 WHERE id = ?", [id]);
+
+    const sql = "SELECT * FROM blog WHERE id = ?";
+    const [rows] = await db.execute(sql, [id]);
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Blog not found" });
+    }
+    res.json(rows[0]);
+  } catch (err) {
+    console.error("Error fetching blog by id:", err);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
 // PUT update blog status
 router.put("/blogs/:id/status", async (req, res) => {
   const { id } = req.params;
-  const { is_active } = req.body; // expected: "published" or "draft"
+  const { status } = req.body; // Expected: 'Draft' or 'Published'
 
-  console.log("Update payload:", { id, is_active });
+  console.log("Update payload:", { id, status });
   try {
     // Update blog status
     const [result] = await db.execute(
-      "UPDATE blog SET is_active = ? WHERE id = ?",
-      [is_active, id]
+      "UPDATE blog SET status = ? WHERE id = ?",
+      [status, id]
     );
 
     if (result.affectedRows === 0) {
@@ -121,9 +172,10 @@ router.delete("/blogs/:id", async (req, res) => {
     }
 
     // Optionally delete image from Cloudinary
-    // (Only if you store the public_id — for now we skip this since we only have image_url)
-    const publicId = rows[0].image_url.split("/").pop().split(".")[0];
-    await cloudinary.uploader.destroy(`blogs/${publicId}`);
+    if (rows[0].banner_image) {
+      const publicId = rows[0].banner_image.split("/").pop().split(".")[0];
+      await cloudinary.uploader.destroy(`blogs/${publicId}`);
+    }
 
     // Delete blog record
     const [result] = await db.execute("DELETE FROM blog WHERE id = ?", [id]);
