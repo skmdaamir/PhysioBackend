@@ -111,6 +111,72 @@ router.get("/blogs/active", async (req, res) => {
     const [rows] = await db.execute(sql);
     // console.log(rows);
     res.json(rows);
+  } catch (error) {
+    console.error("Error fetching Blogs:", error);
+    res.status(500).json({ message: "Failed to fetch Blogs" });
+  }
+});
+
+// GET blog by ID
+router.get("/blogs/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [rows] = await db.execute("SELECT * FROM blog WHERE id = ?", [id]);
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Blog not found" });
+    }
+    res.json(rows[0]);
+  } catch (error) {
+    console.error("Error fetching blog by ID:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// PUT update blog content (including title, categories, author)
+router.put("/blogs/:id", upload.single("image"), async (req, res) => {
+  const { id } = req.params;
+  const { title, content, categories, author, is_publish } = req.body;
+
+  try {
+    const [rows] = await db.execute("SELECT * FROM blog WHERE id = ?", [id]);
+    if (rows.length === 0) return res.status(404).json({ message: "Blog not found" });
+
+    let image_url = rows[0].image_url;
+
+    if (req.file) {
+      const uploadFromBuffer = (buffer) => {
+        return new Promise((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            { folder: "blogs" },
+            (error, result) => {
+              if (error) return reject(error);
+              resolve(result);
+            }
+          );
+          streamifier.createReadStream(buffer).pipe(stream);
+        });
+      };
+
+      const result = await uploadFromBuffer(req.file.buffer);
+      image_url = result.secure_url;
+
+      // Delete old image from Cloudinary
+      const oldPublicId = rows[0].image_url.split("/").pop().split(".")[0];
+      await cloudinary.uploader.destroy(`blogs/${oldPublicId}`);
+    }
+
+    const sql = `UPDATE blog SET title = ?, content = ?, image_url = ?, categories = ?, author = ?, is_publish = ?, updated_at = NOW() WHERE id = ?`;
+    await db.execute(sql, [
+      title || rows[0].title,
+      content || rows[0].content,
+      image_url,
+      categories || rows[0].categories,
+      author || rows[0].author,
+      is_publish || rows[0].is_publish,
+      id,
+    ]);
+
+    res.json({ message: "Blog updated successfully", imagePath: image_url });
   } catch (err) {
     console.error("Error fetching active blogs:", err);
     res.status(500).json({ message: "Failed to fetch active blogs" });
@@ -188,6 +254,27 @@ router.delete("/blogs/:id", async (req, res) => {
   } catch (err) {
     console.error("Error deleting blog:", err);
     res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// View Counting Logic: Call this when a user opens a blog post
+router.patch("/blogs/:id/view", async (req, res) => {
+  const { id } = req.params;
+  try {
+    // Increment views by 1 using MySQL's atomic increment
+    const [result] = await db.execute(
+      "UPDATE blog SET views = views + 1 WHERE id = ?",
+      [id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Blog not found" });
+    }
+
+    res.status(200).json({ message: "View updated" });
+  } catch (error) {
+    console.error("Error updating views:", error);
+    res.status(500).json({ message: "Error updating views" });
   }
 });
 
