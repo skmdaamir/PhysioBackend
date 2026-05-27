@@ -10,6 +10,20 @@ const streamifier = require("streamifier");
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
+// Helper: Wrap Cloudinary upload_stream in a Promise
+const uploadFromBuffer = (buffer) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: "blogs" },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result);
+      }
+    );
+    streamifier.createReadStream(buffer).pipe(stream);
+  });
+};
+
 router.post("/blogs", upload.single("image"), async (req, res) => {
   try {
     const {
@@ -30,20 +44,6 @@ router.post("/blogs", upload.single("image"), async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ error: "Image is required" });
     }
-
-    // Wrap Cloudinary upload_stream in a Promise for async/await
-    const uploadFromBuffer = (buffer) => {
-      return new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          { folder: "blogs" },
-          (error, result) => {
-            if (error) return reject(error);
-            resolve(result);
-          }
-        );
-        streamifier.createReadStream(buffer).pipe(stream);
-      });
-    };
 
     // Upload image
     const result = await uploadFromBuffer(req.file.buffer);
@@ -117,87 +117,110 @@ router.get("/blogs/active", async (req, res) => {
   }
 });
 
-// GET blog by ID
-router.get("/blogs/:id", async (req, res) => {
-  const { id } = req.params;
-  try {
-    const [rows] = await db.execute("SELECT * FROM blog WHERE id = ?", [id]);
-    if (rows.length === 0) {
-      return res.status(404).json({ message: "Blog not found" });
-    }
-    res.json(rows[0]);
-  } catch (error) {
-    console.error("Error fetching blog by ID:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
-
 // PUT update blog content (including title, categories, author)
 router.put("/blogs/:id", upload.single("image"), async (req, res) => {
   const { id } = req.params;
-  const { title, content, categories, author, is_publish } = req.body;
+  const {
+    title,
+    slug,
+    meta_title,
+    meta_description,
+    meta_keywords,
+    city,
+    state,
+    short_description,
+    content,
+    author_name,
+    category,
+    status,
+  } = req.body;
 
   try {
     const [rows] = await db.execute("SELECT * FROM blog WHERE id = ?", [id]);
-    if (rows.length === 0) return res.status(404).json({ message: "Blog not found" });
-
-    let image_url = rows[0].image_url;
-
-    if (req.file) {
-      const uploadFromBuffer = (buffer) => {
-        return new Promise((resolve, reject) => {
-          const stream = cloudinary.uploader.upload_stream(
-            { folder: "blogs" },
-            (error, result) => {
-              if (error) return reject(error);
-              resolve(result);
-            }
-          );
-          streamifier.createReadStream(buffer).pipe(stream);
-        });
-      };
-
-      const result = await uploadFromBuffer(req.file.buffer);
-      image_url = result.secure_url;
-
-      // Delete old image from Cloudinary
-      const oldPublicId = rows[0].image_url.split("/").pop().split(".")[0];
-      await cloudinary.uploader.destroy(`blogs/${oldPublicId}`);
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Blog not found" });
     }
 
-    const sql = `UPDATE blog SET title = ?, content = ?, image_url = ?, categories = ?, author = ?, is_publish = ?, updated_at = NOW() WHERE id = ?`;
+    let banner_image = rows[0].banner_image;
+
+    if (req.file) {
+      const result = await uploadFromBuffer(req.file.buffer);
+      banner_image = result.secure_url;
+
+      // Delete old image from Cloudinary
+      if (rows[0].banner_image) {
+        const oldPublicId = rows[0].banner_image.split("/").pop().split(".")[0];
+        await cloudinary.uploader.destroy(`blogs/${oldPublicId}`);
+      }
+    }
+
+    const sql = `
+      UPDATE blog 
+      SET 
+        title = ?, 
+        slug = ?, 
+        meta_title = ?, 
+        meta_description = ?, 
+        meta_keywords = ?, 
+        city = ?, 
+        state = ?, 
+        short_description = ?, 
+        content = ?, 
+        banner_image = ?, 
+        author_name = ?, 
+        category = ?, 
+        status = ?, 
+        updated_at = NOW() 
+      WHERE id = ?
+    `;
+
     await db.execute(sql, [
       title || rows[0].title,
+      slug || rows[0].slug,
+      meta_title !== undefined ? meta_title : rows[0].meta_title,
+      meta_description !== undefined ? meta_description : rows[0].meta_description,
+      meta_keywords !== undefined ? meta_keywords : rows[0].meta_keywords,
+      city !== undefined ? city : rows[0].city,
+      state !== undefined ? state : rows[0].state,
+      short_description !== undefined ? short_description : rows[0].short_description,
       content || rows[0].content,
-      image_url,
-      categories || rows[0].categories,
-      author || rows[0].author,
-      is_publish || rows[0].is_publish,
+      banner_image,
+      author_name || rows[0].author_name,
+      category || rows[0].category,
+      status || rows[0].status,
       id,
     ]);
 
-    res.json({ message: "Blog updated successfully", imagePath: image_url });
+    res.json({ message: "Blog updated successfully", imagePath: banner_image });
   } catch (err) {
-    console.error("Error fetching active blogs:", err);
-    res.status(500).json({ message: "Failed to fetch active blogs" });
+    console.error("Error updating blog:", err);
+    res.status(500).json({ message: "Failed to update blog" });
   }
 });
 
-// GET single blog by ID
-router.get("/blogs/:id", async (req, res) => {
-  const { id } = req.params;
+// GET single blog by ID or SLUG
+router.get("/blogs/:identifier", async (req, res) => {
+  const { identifier } = req.params;
   try {
-    // Increment the views count for this blog
-    await db.execute("UPDATE blog SET views = views + 1 WHERE id = ?", [id]);
+    // Check if the identifier is numeric (ID) or string (Slug)
+    const isId = /^\d+$/.test(identifier);
+    const searchColumn = isId ? "id" : "slug";
+    console.log(identifier);
+    // Increment the views count
+    await db.execute(
+      `UPDATE blog SET views = views + 1 WHERE ${searchColumn} = ?`,
+      [identifier]
+    );
 
-    const sql = "SELECT * FROM blog WHERE id = ?";
-    const [rows] = await db.execute(sql, [id]);
+    const sql = `SELECT * FROM blog WHERE ${searchColumn} = ?`;
+    const [rows] = await db.execute(sql, [identifier]);
+
     if (rows.length === 0) {
       return res.status(404).json({ message: "Blog not found" });
     }
     res.json(rows[0]);
   } catch (err) {
-    console.error("Error fetching blog by id:", err);
+    console.error("Error fetching blog:", err);
     res.status(500).json({ message: "Internal server error" });
   }
 });
